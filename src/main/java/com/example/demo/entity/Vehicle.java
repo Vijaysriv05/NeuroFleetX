@@ -2,86 +2,86 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "vehicles")
 public class Vehicle {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer vehicleId;
+    private Long id;
 
-    @Column(name = "vehicle_name", nullable = false)
-    private String vehicleName;
-
-    @Column(name = "vehicle_type", nullable = false)
-    private String vehicleType;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING)
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
+    private String model;
 
-    @Column(name = "battery_percentage")
-    private Integer batteryPercentage;
+    @Column(nullable = false)
+    private String status;
 
-    @Column(name = "fuel_percentage")
-    private Integer fuelPercentage;
+    private String location;
 
-    @Column(name = "current_latitude")
-    private Double currentLatitude;
+    @Column(name = "sector")
+    private String sector;
 
-    @Column(name = "current_longitude")
-    private Double currentLongitude;
+    private Integer fuel;
+
+    // Field is Double
+    private Double speed;
+
+    private Integer seats;
+    private Double price;
+
+    @Column(name = "vehicle_condition")
+    private String vehicleCondition;
+
+    @Column(name = "tire_pressure")
+    private Double tirePressure;
+
+    @Column(name = "total_distance")
+    private Double totalDistance;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public enum Status {
-        AVAILABLE,
-        IN_USE,
-        MAINTENANCE,
-        NEEDS_SERVICE
-    }
+    // --- GETTERS AND SETTERS ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public Vehicle() {}
+    public String getModel() { return model; }
+    public void setModel(String model) { this.model = model; }
 
-    // Getters & Setters
-    public Integer getVehicleId() { return vehicleId; }
-    public void setVehicleId(Integer vehicleId) { this.vehicleId = vehicleId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public String getVehicleName() { return vehicleName; }
-    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 
-    public String getVehicleType() { return vehicleType; }
-    public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
+    public String getSector() { return sector; }
+    public void setSector(String sector) { this.sector = sector; }
 
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
+    public Integer getFuel() { return fuel; }
+    public void setFuel(Integer fuel) { this.fuel = fuel; }
 
-    public Integer getBatteryPercentage() { return batteryPercentage; }
-    public void setBatteryPercentage(Integer batteryPercentage) {
-        this.batteryPercentage = batteryPercentage;
-    }
+    // FIXED: Changed return type to Double to match field
+    public Double getSpeed() { return speed; }
 
-    public Integer getFuelPercentage() { return fuelPercentage; }
-    public void setFuelPercentage(Integer fuelPercentage) {
-        this.fuelPercentage = fuelPercentage;
-    }
+    // FIXED: Changed parameter type to Double to match field
+    public void setSpeed(Double speed) { this.speed = speed; }
 
-    public Double getCurrentLatitude() { return currentLatitude; }
-    public void setCurrentLatitude(Double currentLatitude) {
-        this.currentLatitude = currentLatitude;
-    }
+    public Integer getSeats() { return seats; }
+    public void setSeats(Integer seats) { this.seats = seats; }
 
-    public Double getCurrentLongitude() { return currentLongitude; }
-    public void setCurrentLongitude(Double currentLongitude) {
-        this.currentLongitude = currentLongitude;
-    }
+    public Double getPrice() { return price; }
+    public void setPrice(Double price) { this.price = price; }
+
+    public String getVehicleCondition() { return vehicleCondition; }
+    public void setVehicleCondition(String vehicleCondition) { this.vehicleCondition = vehicleCondition; }
+
+    public Double getTirePressure() { return tirePressure; }
+    public void setTirePressure(Double tirePressure) { this.tirePressure = tirePressure; }
+
+    public Double getTotalDistance() { return totalDistance; }
+    public void setTotalDistance(Double totalDistance) { this.totalDistance = totalDistance; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
-

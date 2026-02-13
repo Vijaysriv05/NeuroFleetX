@@ -1,318 +1,156 @@
 import React, { useState } from "react";
 import api from "../api";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 function Login() {
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState(null);
-
   const [responseMessage, setResponseMessage] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [firstSubmit, setFirstSubmit] = useState(true);
+  const [focusedField, setFocusedField] = useState(null);
 
-  // ✅ ROLE ID BASED REDIRECT (UNCHANGED)
   const redirectByRoleId = (roleId) => {
-    if (roleId === 1) navigate("/admin/dashboard");
-    else if (roleId === 2) navigate("/manager/dashboard");
-    else if (roleId === 3) navigate("/driver/dashboard");
-    else if (roleId === 4) navigate("/customer/dashboard");
-    else navigate("/login");
+    switch (roleId) {
+      case 1: window.location.href = "/admin/dashboard"; break;
+      case 2: window.location.href = "/manager/dashboard"; break;
+      case 3: window.location.href = "/driver/dashboard"; break;
+      case 4: window.location.href = "/customer/dashboard"; break;
+      default: window.location.href = "/login";
+    }
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setResponseMessage(null);
     setFieldErrors({});
+    const errors = {};
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
 
-    const missingFields = {};
+    if (!trimmedEmail) errors.email = "Email Required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) errors.email = "Invalid Email";
 
-    // -------- Email Validation --------
-    if (!email) {
-      missingFields.email = "Please fill this field";
-    } else {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email)) {
-        missingFields.email = "Please enter a valid email";
-      }
-    }
+    if (!trimmedPassword) errors.password = "Password Required";
+    else if (trimmedPassword.length < 8) errors.password = "Min 8 Characters";
 
-    // -------- Password Validation --------
-    if (!password) {
-      missingFields.password = "Please fill this field";
-    } else if (password.length < 8) {
-      setResponseMessage({
-        text: "Password must be at least 8 characters",
-        status: "error",
-      });
+    if (!roleId) errors.role = "Role Required";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setResponseMessage({ text: "Missing Parameters", status: "error" });
       return;
     }
 
-    // -------- Role Validation --------
-    if (!roleId) {
-      missingFields.role = "Please select a role";
-    }
-
-    // -------- Handle Validation Errors --------
-    if (Object.keys(missingFields).length > 0) {
-      setFieldErrors(missingFields);
-
-      const msg = firstSubmit
-        ? "Please fill all required fields"
-        : `Please fill: ${Object.keys(missingFields).join(", ")}`;
-
-      setResponseMessage({
-        text: msg,
-        status: "error",
-      });
-
-      setFirstSubmit(false);
-      return;
-    }
-
-    // -------- API CALL (UNCHANGED) --------
     try {
-      const res = await api.post("/login", {
-        email,
-        password,
-        roleId,
-      });
+          const res = await api.post("/login", { email: trimmedEmail, password: trimmedPassword, roleId });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("roleId", res.data.roleId);
-      localStorage.setItem("email", email);
+          // Save all necessary identifiers
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("roleId", String(res.data.roleId));
 
-      setResponseMessage({
-        text: res.data.message || "Login successful",
-        status: "success",
-      });
+          // CRITICAL FIX: Match the Backend key 'userId'
+          localStorage.setItem("userId", String(res.data.userId));
 
-      // ✅ REDIRECT USING ROLE ID (UNCHANGED)
-      setTimeout(() => {
-        redirectByRoleId(res.data.roleId);
-      }, 800);
+          localStorage.setItem("email", trimmedEmail);
+          localStorage.setItem("userName", res.data.name || "User");
 
-    } catch (err) {
-      setResponseMessage({
-        text: err.response?.data?.message || "Email or Password is incorrect",
-        status: "error",
-      });
-    }
+          setResponseMessage({ text: "Authentication Successful", status: "success" });
+          setTimeout(() => redirectByRoleId(res.data.roleId), 1000);
+        } catch (err) {
+          setResponseMessage({ text: err.response?.data?.message || "Invalid Credentials", status: "error" });
+        }
   };
 
-  const getSymbol = (status) => {
-    if (status === "success") return "✅";
-    if (status === "error") return "❌";
-    return "";
-  };
+  const getInputStyle = (name) => ({
+    ...styles.input,
+    borderColor: fieldErrors[name] ? "#ef4444" : focusedField === name ? "#00ffaa" : "rgba(255,255,255,0.1)",
+    boxShadow: fieldErrors[name] ? "0 0 10px rgba(239, 68, 68, 0.3)" : focusedField === name ? "0 0 15px rgba(0, 255, 170, 0.4)" : "none",
+    transition: "all 0.3s ease"
+  });
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>LOGIN</h2>
+      <div style={styles.glow} />
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={styles.card}>
+        <h2 style={styles.title}>NeuroFleetX <span style={{color: '#6366f1'}}>Login</span></h2>
 
         {responseMessage && (
-          <div
-            style={{
-              ...styles.messageBox,
-              backgroundColor:
-                responseMessage.status === "success" ? "#e6ffea" : "#ffe6e6",
-              color:
-                responseMessage.status === "success" ? "#007a33" : "#b30000",
-            }}
-          >
-            {getSymbol(responseMessage.status)} {responseMessage.text}
+          <div style={{...styles.messageBox, color: responseMessage.status === "success" ? "#00ffaa" : "#ef4444"}}>
+            {responseMessage.status === "success" ? "✓ " : "⚠ "} {responseMessage.text}
           </div>
         )}
 
-        <form noValidate onSubmit={handleLogin} style={styles.form}>
-          {/* Email */}
-          <div style={{ position: "relative" }}>
+        <form onSubmit={handleLogin} style={styles.form}>
+          <div style={styles.inputGroup}>
             <input
               type="email"
-              placeholder="Email"
+              placeholder="Neural Email"
               value={email}
+              onFocus={() => { setFocusedField("email"); setFieldErrors(p => ({...p, email: null})); }}
+              onBlur={() => setFocusedField(null)}
               onChange={(e) => setEmail(e.target.value)}
-              style={{
-                ...styles.input,
-                animation: fieldErrors.email ? "blink 0.5s step-start 3" : "none",
-                borderColor: fieldErrors.email ? "#b30000" : "#ccc",
-              }}
+              style={getInputStyle("email")}
             />
-            {fieldErrors.email && (
-              <small style={styles.fieldError}>{fieldErrors.email}</small>
-            )}
+            {fieldErrors.email && <small style={styles.fieldError}>{fieldErrors.email}</small>}
           </div>
 
-          {/* Password */}
-          <div style={{ position: "relative" }}>
+          <div style={styles.inputGroup}>
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Access Password"
               value={password}
+              onFocus={() => { setFocusedField("password"); setFieldErrors(p => ({...p, password: null})); }}
+              onBlur={() => setFocusedField(null)}
               onChange={(e) => setPassword(e.target.value)}
-              style={{
-                ...styles.input,
-                animation: fieldErrors.password ? "blink 0.5s step-start 3" : "none",
-                borderColor: fieldErrors.password ? "#b30000" : "#ccc",
-              }}
+              style={getInputStyle("password")}
             />
-            {fieldErrors.password && (
-              <small style={styles.fieldError}>{fieldErrors.password}</small>
-            )}
+            {fieldErrors.password && <small style={styles.fieldError}>{fieldErrors.password}</small>}
           </div>
 
-          {/* Role */}
-          <div style={styles.roleContainer}>
-            <label style={styles.roleLabel}>Role:</label>
-
-            <label>
-              <input
-                type="radio"
-                checked={roleId === 1}
-                onChange={() => setRoleId(1)}
-              />{" "}
-              Admin
-            </label>
-
-            <label style={styles.radioMargin}>
-              <input
-                type="radio"
-                checked={roleId === 2}
-                onChange={() => setRoleId(2)}
-              />{" "}
-              Fleet Manager
-            </label>
-
-            <label style={styles.radioMargin}>
-              <input
-                type="radio"
-                checked={roleId === 3}
-                onChange={() => setRoleId(3)}
-              />{" "}
-              Driver
-            </label>
-
-            <label style={styles.radioMargin}>
-              <input
-                type="radio"
-                checked={roleId === 4}
-                onChange={() => setRoleId(4)}
-              />{" "}
-              Customer
-            </label>
-
-            {fieldErrors.role && (
-              <small style={styles.fieldError}>{fieldErrors.role}</small>
-            )}
+          <div style={styles.roleGrid}>
+            {[ {id:1, n:"Admin"}, {id:2, n:"Manager"}, {id:3, n:"Driver"}, {id:4, n:"User"} ].map(r => (
+              <label key={r.id} style={{
+                ...styles.roleCard,
+                backgroundColor: roleId === r.id ? "#6366f1" : "rgba(255,255,255,0.05)",
+                border: fieldErrors.role && !roleId ? "1px solid #ef4444" : "1px solid transparent"
+              }}>
+                <input type="radio" checked={roleId === r.id} onChange={() => { setRoleId(r.id); setFieldErrors(p => ({...p, role: null})); }} style={{display: 'none'}} />
+                {r.n}
+              </label>
+            ))}
           </div>
+          {fieldErrors.role && <small style={{...styles.fieldError, textAlign: 'center'}}>{fieldErrors.role}</small>}
 
-          <button type="submit" style={styles.button}>
-            LOGIN
-          </button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" style={styles.button}>
+            AUTHENTICATE
+          </motion.button>
         </form>
-
-        <p style={{ marginTop: "15px", fontSize: "16px" }}>
-          Don’t have an account? <Link to="/register">Please register</Link>
+        <p style={{ marginTop: "20px", color: "#94a3b8" }}>
+          New operator? <Link to="/register" style={{color: '#6366f1', textDecoration: 'none'}}>Register Node</Link>
         </p>
-      </div>
-
-      <style>
-        {`
-          @keyframes blink {
-            0% { border-color: #b30000; }
-            50% { border-color: #fff; }
-            100% { border-color: #b30000; }
-          }
-        `}
-      </style>
+      </motion.div>
     </div>
   );
 }
 
 const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "100vh",
-    background: "#e6f0ff",
-    fontFamily: "Arial, sans-serif",
-  },
-  card: {
-    background: "#d9e6ff",
-    padding: "50px",
-    borderRadius: "16px",
-    width: "450px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-    textAlign: "center",
-  },
-  title: {
-    marginBottom: "35px",
-    color: "#0b1f4c",
-    fontSize: "28px",
-  },
-  form: { display: "flex", flexDirection: "column", gap: "18px" },
-  input: {
-    padding: "14px",
-    fontSize: "18px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    width: "100%",
-  },
-  roleContainer: {
-    textAlign: "left",
-    marginTop: "10px",
-    fontSize: "16px",
-    position: "relative",
-  },
-  roleLabel: { fontWeight: "bold", display: "block", marginBottom: "8px" },
-  radioMargin: { marginLeft: "20px" },
-  button: {
-    marginTop: "25px",
-    padding: "14px",
-    fontSize: "18px",
-    background: "linear-gradient(90deg,#4a6cf7,#1a3578)",
-    color: "white",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-  },
-  messageBox: {
-    padding: "12px",
-    borderRadius: "8px",
-    fontSize: "16px",
-    marginBottom: "20px",
-  },
-  fieldError: {
-    color: "#b30000",
-    fontSize: "14px",
-    position: "absolute",
-    bottom: "-20px",
-    left: "0",
-  },
+  container: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#05070a", fontFamily: "'Inter', sans-serif", position: 'relative', overflow: 'hidden' },
+  glow: { position: 'absolute', width: '600px', height: '600px', background: 'rgba(99, 102, 241, 0.15)', filter: 'blur(100px)', borderRadius: '50%' },
+  card: { background: "rgba(255, 255, 255, 0.03)", backdropFilter: "blur(20px)", padding: "50px", borderRadius: "32px", width: "450px", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center", zIndex: 1 },
+  title: { marginBottom: "30px", color: "white", fontSize: "32px", fontWeight: "900", letterSpacing: "-1px" },
+  form: { display: "flex", flexDirection: "column", gap: "15px" },
+  inputGroup: { position: "relative", textAlign: 'left' },
+  input: { padding: "16px", fontSize: "16px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.2)", color: "white", width: "100%", outline: 'none' },
+  roleGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' },
+  roleCard: { padding: '12px', borderRadius: '12px', cursor: 'pointer', color: 'white', fontSize: '14px', fontWeight: 'bold', transition: '0.3s' },
+  button: { marginTop: "20px", padding: "16px", fontSize: "16px", background: "#6366f1", color: "white", border: "none", borderRadius: "14px", cursor: "pointer", fontWeight: "900", boxShadow: "0 10px 20px rgba(99,102,241,0.3)" },
+  messageBox: { marginBottom: "20px", fontWeight: 'bold' },
+  fieldError: { color: "#ef4444", fontSize: "11px", marginTop: "5px", display: 'block', fontWeight: 'bold' },
 };
 
 export default Login;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

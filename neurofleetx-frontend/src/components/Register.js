@@ -1,331 +1,134 @@
 import React, { useState } from "react";
 import api from "../api";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 function Register() {
   const navigate = useNavigate();
-
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [responseMessage, setResponseMessage] = useState(null);
-  const [firstSubmit, setFirstSubmit] = useState(true);
-  const [fieldErrors, setFieldErrors] = useState({}); // track field-specific errors
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setResponseMessage(null);
-    setFieldErrors({}); // reset previous errors
+    setFieldErrors({});
 
     const missingFields = {};
-
-    // -------- Username Validation --------
-    if (!username) missingFields.username = "Please fill this field";
-
-    // -------- Email Validation --------
-    if (!email) {
-      missingFields.email = "Please fill this field";
-    } else {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email)) missingFields.email = "Please enter a valid email";
+    if (!username.trim()) missingFields.username = "Name Required";
+    if (!email.trim()) {
+      missingFields.email = "Email Required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      missingFields.email = "Invalid Format";
     }
-
-    // -------- Password Validation --------
-    if (!password) {
-      missingFields.password = "Please fill this field";
+    if (!password.trim()) {
+      missingFields.password = "Password Required";
     } else if (password.length < 8) {
-      missingFields.password = "Password must be at least 8 characters";
+      missingFields.password = "Min 8 Chars";
     }
+    if (!roleId) missingFields.role = "Role Required";
 
-    // -------- Role Validation --------
-    if (!roleId) missingFields.role = "Please select a role";
-
-    // -------- Handle front-end field errors --------
     if (Object.keys(missingFields).length > 0) {
       setFieldErrors(missingFields);
-
-      const msg = firstSubmit
-        ? "Please fill all required fields"
-        : `Please fill: ${Object.keys(missingFields).join(", ")}`;
-
-      setResponseMessage({
-        text: msg,
-        status: "error",
-      });
-
-      setFirstSubmit(false);
+      setResponseMessage({ text: "Missing Parameters", status: "error" });
       return;
     }
 
-    // -------- API Call --------
     try {
-      const res = await api.post("/register", { username, email, password, roleId });
-
-      setResponseMessage({
-        text: res.data.message || "Registration successful",
-        status: "success",
-      });
-
+      await api.post("/register", { username, email, password, roleId });
+      setResponseMessage({ text: "Registration Successful", status: "success" });
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      // Proper backend error handling
-      let msg = "Registration failed";
-      const backendMsg = err.response?.data?.message;
-
-      if (backendMsg) {
-        if (backendMsg.toLowerCase().includes("already exists")) {
-          msg = "User already exists! Please login";
-        } else if (backendMsg.toLowerCase().includes("invalid password")) {
-          msg = "Invalid password";
-          setFieldErrors({ password: "Invalid password" }); // <-- show under password field
-        } else {
-          msg = backendMsg;
-        }
-      }
-
-      setResponseMessage({
-        text: msg,
-        status: "error",
-      });
+      setResponseMessage({ text: err.response?.data?.message || "Registration Denied", status: "error" });
     }
   };
 
-  const getSymbol = (status) => {
-    if (status === "success") return "✅";
-    if (status === "error") return "❌";
-    return "";
-  };
+  const getStyle = (name) => ({
+    ...styles.input,
+    borderColor: fieldErrors[name] ? "#ef4444" : focusedField === name ? "#00ffaa" : "rgba(255,255,255,0.1)",
+    boxShadow: fieldErrors[name] ? "0 0 10px rgba(239, 68, 68, 0.3)" : focusedField === name ? "0 0 15px rgba(0, 255, 170, 0.4)" : "none",
+  });
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>REGISTER</h2>
+      <div style={styles.glowOverlay} />
+      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} style={styles.card}>
+        <h2 style={styles.title}>REGISTRATION <span style={{color: '#6366f1'}}>NODE</span></h2>
 
         {responseMessage && (
-          <div
-            style={{
-              ...styles.messageBox,
-              backgroundColor:
-                responseMessage.status === "success" ? "#e6ffea" : "#ffe6e6",
-              color: responseMessage.status === "success" ? "#007a33" : "#b30000",
-            }}
-          >
-            {getSymbol(responseMessage.status)} {responseMessage.text}
+          <div style={{
+            ...styles.messageBox,
+            color: responseMessage.status === "success" ? "#00ffaa" : "#ef4444",
+            border: `1px solid ${responseMessage.status === "success" ? "#10b98133" : "#ef444433"}`
+          }}>
+            {responseMessage.status === "success" ? "✓" : "⚠"} {responseMessage.text}
           </div>
         )}
 
-        <form noValidate onSubmit={handleRegister} style={styles.form}>
-          {/* Username */}
-          <div style={{ position: "relative" }}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{
-                ...styles.input,
-                animation: fieldErrors.username ? "blink 0.5s step-start 3" : "none",
-                borderColor: fieldErrors.username ? "#b30000" : "#ccc",
-              }}
-              required
-            />
-            {fieldErrors.username && (
-              <small style={styles.fieldError}>{fieldErrors.username}</small>
-            )}
+        <form onSubmit={handleRegister} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <input type="text" placeholder="Operator Name" value={username} onFocus={() => { setFocusedField("username"); setFieldErrors(p => ({...p, username: null})); }} onBlur={() => setFocusedField(null)} style={getStyle("username")} onChange={(e) => setUsername(e.target.value)} />
+            {fieldErrors.username && <small style={styles.fieldError}>{fieldErrors.username}</small>}
           </div>
 
-          {/* Email */}
-          <div style={{ position: "relative" }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                ...styles.input,
-                animation: fieldErrors.email ? "blink 0.5s step-start 3" : "none",
-                borderColor: fieldErrors.email ? "#b30000" : "#ccc",
-              }}
-              required
-            />
-            {fieldErrors.email && (
-              <small style={styles.fieldError}>{fieldErrors.email}</small>
-            )}
+          <div style={styles.inputGroup}>
+            <input type="email" placeholder="Neural Email" value={email} onFocus={() => { setFocusedField("email"); setFieldErrors(p => ({...p, email: null})); }} onBlur={() => setFocusedField(null)} style={getStyle("email")} onChange={(e) => setEmail(e.target.value)} />
+            {fieldErrors.email && <small style={styles.fieldError}>{fieldErrors.email}</small>}
           </div>
 
-          {/* Password */}
-          <div style={{ position: "relative" }}>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                ...styles.input,
-                animation: fieldErrors.password ? "blink 0.5s step-start 3" : "none",
-                borderColor: fieldErrors.password ? "#b30000" : "#ccc",
-              }}
-              required
-            />
-            {fieldErrors.password && (
-              <small style={styles.fieldError}>{fieldErrors.password}</small>
-            )}
+          <div style={styles.inputGroup}>
+            <input type="password" placeholder="System Password" value={password} onFocus={() => { setFocusedField("password"); setFieldErrors(p => ({...p, password: null})); }} onBlur={() => setFocusedField(null)} style={getStyle("password")} onChange={(e) => setPassword(e.target.value)} />
+            {fieldErrors.password && <small style={styles.fieldError}>{fieldErrors.password}</small>}
           </div>
 
-          {/* Role */}
           <div style={styles.roleContainer}>
-            <label style={styles.roleLabel}>Role:</label>
-            <div>
-              <label>
-                <input
-                  type="radio"
-                  name="role"
-                  checked={roleId === 1}
-                  onChange={() => setRoleId(1)}
-                  required
-                />{" "}
-                Admin
-              </label>
-
-              <label style={styles.radioMargin}>
-                <input
-                  type="radio"
-                  name="role"
-                  checked={roleId === 2}
-                  onChange={() => setRoleId(2)}
-                />{" "}
-                Fleet Manager
-              </label>
-
-              <label style={styles.radioMargin}>
-                <input
-                  type="radio"
-                  name="role"
-                  checked={roleId === 3}
-                  onChange={() => setRoleId(3)}
-                />{" "}
-                Driver
-              </label>
-
-              <label style={styles.radioMargin}>
-                <input
-                  type="radio"
-                  name="role"
-                  checked={roleId === 4}
-                  onChange={() => setRoleId(4)}
-                />{" "}
-                Customer
-              </label>
+            <p style={styles.roleLabel}>ASSIGN_INTERFACE_ROLE:</p>
+            <div style={styles.roleGrid}>
+              {[ {id:1, n:"Admin"}, {id:2, n:"Manager"}, {id:3, n:"Driver"}, {id:4, n:"User"} ].map(r => (
+                <label key={r.id} style={{
+                    ...styles.roleCard,
+                    backgroundColor: roleId === r.id ? "#6366f1" : "rgba(255,255,255,0.05)",
+                    borderColor: roleId === r.id ? "#818cf8" : fieldErrors.role ? "#ef4444" : "rgba(255,255,255,0.1)"
+                }}>
+                  <input type="radio" checked={roleId === r.id} onChange={() => { setRoleId(r.id); setFieldErrors(p => ({...p, role: null})); }} style={{display: 'none'}} />
+                  {r.n}
+                </label>
+              ))}
             </div>
-            {fieldErrors.role && (
-              <small style={styles.fieldError}>{fieldErrors.role}</small>
-            )}
+            {fieldErrors.role && <small style={styles.fieldError}>{fieldErrors.role}</small>}
           </div>
 
-          <button type="submit" style={styles.button}>
-            REGISTER
-          </button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" style={styles.button}>
+            INITIALIZE IDENTITY
+          </motion.button>
         </form>
-
-        <p style={{ marginTop: "15px", fontSize: "16px" }}>
-          Already have an account? <Link to="/login">Please login</Link>
+        <p style={{ marginTop: "25px", color: "#64748b", fontSize: "14px" }}>
+          Registered Operator? <Link to="/login" style={{color: '#6366f1', textDecoration: 'none', fontWeight: 'bold'}}>Access Matrix</Link>
         </p>
-      </div>
-
-      {/* Blinking animation */}
-      <style>
-        {`
-          @keyframes blink {
-            0% { border-color: #b30000; }
-            50% { border-color: #fff; }
-            100% { border-color: #b30000; }
-          }
-        `}
-      </style>
+      </motion.div>
     </div>
   );
 }
 
 const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "100vh",
-    background: "#e6f0ff",
-    fontFamily: "Arial, sans-serif",
-  },
-  card: {
-    background: "#d9e6ff",
-    padding: "50px",
-    borderRadius: "16px",
-    width: "450px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
-    textAlign: "center",
-  },
-  title: {
-    marginBottom: "35px",
-    color: "#0b1f4c",
-    fontSize: "28px",
-  },
-  form: { display: "flex", flexDirection: "column", gap: "18px" },
-  input: {
-    padding: "14px",
-    fontSize: "18px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    width: "100%",
-  },
-  roleContainer: {
-    textAlign: "left",
-    marginTop: "10px",
-    fontSize: "16px",
-    position: "relative",   // ✅ THIS IS THE FIX
-  },
-  roleLabel: { fontWeight: "bold", display: "block", marginBottom: "8px" },
-  radioMargin: { marginLeft: "20px" },
-  button: {
-    marginTop: "25px",
-    padding: "14px",
-    fontSize: "18px",
-    background: "linear-gradient(90deg,#4a6cf7,#1a3578)",
-    color: "white",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-  },
-  messageBox: {
-    padding: "12px",
-    borderRadius: "8px",
-    fontSize: "16px",
-    marginBottom: "20px",
-    textAlign: "center",
-  },
-  fieldError: {
-    color: "#b30000",
-    fontSize: "14px",
-    position: "absolute",
-    bottom: "-20px",
-    left: "0",
-  },
+  container: { display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#05070a", fontFamily: "'Inter', sans-serif", position: 'relative', overflow: 'hidden' },
+  glowOverlay: { position: 'absolute', width: '1000px', height: '1000px', background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)', top: '-20%', right: '-10%' },
+  card: { background: "rgba(255, 255, 255, 0.02)", backdropFilter: "blur(20px)", padding: "50px", borderRadius: "40px", width: "500px", border: "1px solid rgba(255,255,255,0.05)", textAlign: "center", zIndex: 1 },
+  title: { marginBottom: "30px", color: "white", fontSize: "32px", fontWeight: "900", letterSpacing: '-1.5px', fontStyle: 'italic' },
+  form: { display: "flex", flexDirection: "column", gap: "12px" },
+  inputGroup: { position: "relative", textAlign: 'left' },
+  input: { padding: "16px 20px", fontSize: "16px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(0,0,0,0.2)", color: "white", width: "100%", outline: 'none', transition: 'all 0.3s' },
+  roleContainer: { textAlign: "left", marginTop: "10px" },
+  roleLabel: { color: "#475569", fontSize: "10px", fontWeight: "900", letterSpacing: "2px", marginBottom: "12px" },
+  roleGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
+  roleCard: { padding: '14px', borderRadius: '12px', cursor: 'pointer', color: 'white', fontSize: '13px', fontWeight: 'bold', border: '1px solid transparent', textAlign: 'center', transition: '0.3s' },
+  button: { marginTop: "20px", padding: "18px", fontSize: "16px", background: "#6366f1", color: "white", border: "none", borderRadius: "18px", cursor: "pointer", fontWeight: "900", boxShadow: "0 15px 30px rgba(99,102,241,0.3)" },
+  messageBox: { padding: "15px", borderRadius: "12px", fontSize: "14px", marginBottom: "25px", fontWeight: 'bold', background: "rgba(0,0,0,0.2)" },
+  fieldError: { color: "#ef4444", fontSize: "11px", marginTop: "6px", fontWeight: 'bold' },
 };
 
 export default Register;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

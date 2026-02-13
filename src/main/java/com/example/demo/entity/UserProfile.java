@@ -3,24 +3,30 @@ package com.example.demo.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "user_profile")
+@Table(name = "user_profiles")
 public class UserProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     private String name;
-
-    @Column(unique = true)
     private String email;
+
+    @Column(name = "role_id")
+    private Integer roleId;
 
     private String phone;
     private String address;
 
-    private Integer roleId; // ✅ same as User entity
+    @Column(name = "status")
+    private String status;
 
-    // Getters & Setters
+    public UserProfile() {}
+
+    // --- GETTERS AND SETTERS ---
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -30,13 +36,15 @@ public class UserProfile {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+    public Integer getRoleId() { return roleId; }
+    public void setRoleId(Integer roleId) { this.roleId = roleId; }
+
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public Integer getRoleId() { return roleId; }
-    public void setRoleId(Integer roleId) { this.roleId = roleId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
-

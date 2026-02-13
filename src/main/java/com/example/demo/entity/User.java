@@ -23,13 +23,23 @@ public class User {
     @Column(name = "role_id", nullable = false)
     private Integer roleId;
 
+    /**
+     * Maps to the 'role' column.
+     * Used for status tracking: 'PENDING', 'APPROVED', 'REJECTED'
+     */
+    @Column(name = "role")
+    private String role;
+
     @Column(length = 15)
     private String phone;
 
     @Column(length = 255)
     private String address;
 
-    // ---------------- existing getters & setters ----------------
+    // --- CONSTRUCTORS ---
+    public User() {}
+
+    // --- GETTERS & SETTERS ---
 
     public Long getUserId() {
         return userId;
@@ -67,13 +77,17 @@ public class User {
         return roleId;
     }
 
-
-
     public void setRoleId(Integer roleId) {
         this.roleId = roleId;
     }
 
-    // ---------------- NEW (PROFILE REQUIREMENT) ----------------
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
     public String getPhone() {
         return phone;
@@ -91,4 +105,3 @@ public class User {
         this.address = address;
     }
 }
-

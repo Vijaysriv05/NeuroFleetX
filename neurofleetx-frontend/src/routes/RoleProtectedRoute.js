@@ -1,15 +1,15 @@
 // src/routes/RoleProtectedRoute.js
-// src/routes/RoleProtectedRoute.js
-import React from "react";
 import { Navigate } from "react-router-dom";
 
 const RoleProtectedRoute = ({ children, allowedRoleIds }) => {
   const token = localStorage.getItem("token");
-  const userRoleId = Number(localStorage.getItem("roleId"));
+  const roleId = Number(localStorage.getItem("roleId"));
 
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
 
-  if (!allowedRoleIds || !allowedRoleIds.includes(userRoleId)) {
+  if (!allowedRoleIds.includes(roleId)) {
     return <Navigate to="/login" replace />;
   }
 
@@ -17,7 +17,3 @@ const RoleProtectedRoute = ({ children, allowedRoleIds }) => {
 };
 
 export default RoleProtectedRoute;
-
-
-
-

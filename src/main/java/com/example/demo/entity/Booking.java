@@ -1,68 +1,92 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "bookings") // optional, but good practice
+@Table(name = "booking")
 public class Booking {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer bookingId;
+    private Long id;
 
-    @Column(nullable = false)
-    private Integer userId;
+    @Column(name = "user_id")
+    private String userId;
 
-    @Column(nullable = false)
-    private Integer vehicleId;
+    @Column(name = "vehicle_model")
+    private String vehicleModel;
 
-    @Column(nullable = false)
-    private Integer routeId;
+    @Column(name = "status")
+    private String status; // PENDING, APPROVED, TRIP_ACTIVE, REJECTED
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @CreationTimestamp
-    private LocalDateTime createdAt;
+    @Column(name = "pickup_location")
+    private String pickupLocation;
 
-    // ---------------- Getters and Setters ----------------
-    public Integer getBookingId() {
-        return bookingId;
-    }
+    @Column(name = "drop_location")
+    private String dropLocation;
 
-    public void setBookingId(Integer bookingId) {
-        this.bookingId = bookingId;
-    }
+    @Column(name = "booking_time")
+    private LocalDateTime bookingTime = LocalDateTime.now();
 
-    public Integer getUserId() {
-        return userId;
-    }
+    // --- DASHBOARD METRICS (NEUROX UI COMPATIBLE) ---
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
+    @Column(name = "distance")
+    private String distance = "0.00";
 
-    public Integer getVehicleId() {
-        return vehicleId;
-    }
+    @Column(name = "duration")
+    private String duration = "0.0";
 
-    public void setVehicleId(Integer vehicleId) {
-        this.vehicleId = vehicleId;
-    }
+    @Column(name = "progress")
+    private Integer progress = 0;
 
-    public Integer getRouteId() {
-        return routeId;
-    }
+    @Column(name = "velocity")
+    private String velocity = "0"; // To display "0 KM/H" on UI
 
-    public void setRouteId(Integer routeId) {
-        this.routeId = routeId;
-    }
+    @Column(name = "energy")
+    private Integer energy = 100; // To display "100%" on UI
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    // --- CONSTRUCTORS ---
 
-    // no setter for createdAt because @CreationTimestamp handles it
+    public Booking() {}
+
+    // --- EXISTING GETTERS AND SETTERS ---
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+
+    public String getVehicleModel() { return vehicleModel; }
+    public void setVehicleModel(String vehicleModel) { this.vehicleModel = vehicleModel; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getPickupLocation() { return pickupLocation; }
+    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
+
+    public String getDropLocation() { return dropLocation; }
+    public void setDropLocation(String dropLocation) { this.dropLocation = dropLocation; }
+
+    public LocalDateTime getBookingTime() { return bookingTime; }
+    public void setBookingTime(LocalDateTime bookingTime) { this.bookingTime = bookingTime; }
+
+    // --- NEW METRIC GETTERS AND SETTERS ---
+
+    public String getDistance() { return distance; }
+    public void setDistance(String distance) { this.distance = distance; }
+
+    public String getDuration() { return duration; }
+    public void setDuration(String duration) { this.duration = duration; }
+
+    public Integer getProgress() { return progress; }
+    public void setProgress(Integer progress) { this.progress = progress; }
+
+    public String getVelocity() { return velocity; }
+    public void setVelocity(String velocity) { this.velocity = velocity; }
+
+    public Integer getEnergy() { return energy; }
+    public void setEnergy(Integer energy) { this.energy = energy; }
 }
-
-

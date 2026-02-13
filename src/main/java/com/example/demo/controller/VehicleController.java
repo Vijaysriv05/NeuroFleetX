@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+/*package com.example.demo.controller;
 
 import org.springframework.http.ResponseEntity;
 import com.example.demo.entity.Vehicle;
@@ -62,4 +62,4 @@ public class VehicleController {
             return ResponseEntity.notFound().build(); // 404
         }
     }
-}
+}*/
